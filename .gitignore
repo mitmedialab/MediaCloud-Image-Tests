@@ -1,0 +1,26 @@
+# osx noise
+.DS_Store
+profile
+
+# xcode noise
+build/*
+*.mode1
+*.mode1v3
+*.mode2v3
+*.perspective
+*.perspectivev3
+*.pbxuser
+*.xcworkspace
+xcuserdata
+
+# svn & cvs
+.svn
+CVS
+.idea
+examples/*images-files
+examples/*logits.csv.gz
+doppler/__pycache__/
+data/*.pkl
+data/*.png
+data/.csv
+.python-version
