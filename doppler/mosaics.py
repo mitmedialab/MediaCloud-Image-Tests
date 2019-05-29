@@ -107,7 +107,7 @@ def build(logits_file_path, full_metadata_file_path, sample_dataset_file_path,
     # build the scatterplot
     scatterplot_image_path = os.path.join(DATA_DIR, 'scatterplot.png')
     logging.info("  Building scatterplot image to {}...".format(scatterplot_image_path))
-    image = mosaic_utils.scatterplot_images(embeddings, images)
+    image = mosaic_utils.scatterplot_images(embeddings, images, width=2400, height=1800, max_dim=100)
     image.save(scatterplot_image_path)
     logging.info("  done")
 

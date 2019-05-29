@@ -24,3 +24,4 @@ data/*.pkl
 data/*.png
 data/.csv
 .python-version
+*.pyc

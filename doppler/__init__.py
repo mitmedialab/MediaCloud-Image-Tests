@@ -9,4 +9,4 @@ logging.basicConfig(
 # shared variables
 skip_hash = ['NOHASH', '0000000000000000', 'nan']
 n_dimensions = 2048  # features from resnet50, change this is you change the model in feature extraction.
-cols_conv_feats = [f'conv_{n}' for n in range(n_dimensions)]
+cols_conv_feats = ['conv_{}'.format(n) for n in range(n_dimensions)]

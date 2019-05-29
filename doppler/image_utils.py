@@ -78,8 +78,7 @@ def display_n_images(imgs, per_row=4):
         ax[j].axis('off')
 
 
-def download_media(url: str,
-                   fn: str):
+def download_media(url, fn):
     """
     Downloads an image from the open web.
     """
