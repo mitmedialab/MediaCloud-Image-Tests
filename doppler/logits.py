@@ -1,6 +1,7 @@
 import os
 import pandas as pd
 from tqdm import tqdm
+import sys
 import torch
 from torch import nn
 from torch.utils.data.dataset import Dataset
@@ -8,7 +9,7 @@ from torch.utils.data import DataLoader
 from torchvision import models, transforms
 import logging
 
-from doppler import skip_hash, cols_conv_feats
+from doppler import skip_hash, cols_conv_feats, filename_without_extension
 from doppler.image_utils import read_and_transform_image
 
 logger = logging.getLogger(__file__)
@@ -113,6 +114,8 @@ def build(json_file_path, logits_file_path, image_path_property='f_img', index_p
 
 
 if __name__ == "__main__":
-    json_path = os.path.join('./', 'examples', 'caravan-news-images.json')
-    logits_file_path = os.path.join('./', 'examples', 'caravan-news-images-logits.csv.gz')
+    json_path = sys.argv[1]
+    logger.info("Reading from {}".format(json_path))
+    filename = filename_without_extension(json_path)
+    logits_file_path = os.path.join('./', 'data', '{}-logits.csv.gz'.format(filename))
     build(json_path, logits_file_path, image_path_property='image_path')

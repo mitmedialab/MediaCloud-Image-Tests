@@ -17,11 +17,12 @@ xcuserdata
 .svn
 CVS
 .idea
-examples/*images-files
-examples/*logits.csv.gz
 doppler/__pycache__/
 data/*.pkl
 data/*.png
 data/.csv
 .python-version
 *.pyc
+data/*.*
+data/images*
+.env

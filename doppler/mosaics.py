@@ -1,10 +1,11 @@
 import os
+import sys
 import pandas as pd
 from sklearn.externals import joblib
 import umap
 import logging
 
-from doppler import cols_conv_feats, skip_hash
+from doppler import cols_conv_feats, skip_hash, filename_without_extension
 import doppler.mosaic_utils as mosaic_utils
 
 logger = logging.getLogger(__file__)
@@ -12,7 +13,7 @@ logger = logging.getLogger(__file__)
 DATA_DIR = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'data')
 
 
-def build(logits_file_path, full_metadata_file_path, sample_dataset_file_path,
+def build(filename, logits_file_path, full_metadata_file_path, sample_dataset_file_path,
           date_col_name='created_at', image_path_property='f_img'):
     logging.info("Starting to build mosaic")
     # Reduce Dimensions
@@ -119,13 +120,15 @@ def build(logits_file_path, full_metadata_file_path, sample_dataset_file_path,
                                  mosaic_width=nx, mosaic_height=ny,
                                  tile_width=tile_width, tile_height=tile_height,
                                  save_as_file=mosaic_file_path, verbose=True, return_image=True,
-                                 title="Mosaic of Caravan News")
+                                 title="Mosaic of {}".format(filename))
     logging.info("Done")
 
 
 if __name__ == "__main__":
-    logits_file_path = os.path.join('./', 'examples', 'caravan-news-images-logits.csv.gz')
-    full_metadata_file_path = os.path.join('./', 'examples', 'caravan-news-images-metadata.csv.gz')
-    sample_dataset_file_path = os.path.join('./', 'examples', 'caravan-news-images-dataset.csv.gz')
-    build(logits_file_path, full_metadata_file_path, sample_dataset_file_path,
+    json_path = sys.argv[1]
+    filename = filename_without_extension(json_path)
+    logits_file_path = os.path.join('./', 'data', '{}-logits.csv.gz'.format(filename))
+    full_metadata_file_path = os.path.join('./', 'data', '{}-metadata.csv.gz'.format(filename))
+    sample_dataset_file_path = os.path.join('./', 'data', '{}-dataset.csv.gz'.format(filename))
+    build(filename, logits_file_path, full_metadata_file_path, sample_dataset_file_path,
           date_col_name='publish_date', image_path_property='image_path')

@@ -12,3 +12,8 @@ scikit-learn
 umap-learn
 numba
 rasterfairy
+
+newspaper3k
+mediacloud
+requests
+python-dotenv
