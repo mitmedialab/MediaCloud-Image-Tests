@@ -5,6 +5,7 @@ import mediacloud.api
 import os
 import logging
 import json
+import csv
 from dotenv import load_dotenv
 
 import doppler
@@ -12,7 +13,7 @@ import doppler
 logger = logging.getLogger(__file__)
 
 TOPIC_ID = 3132  # abortion in us
-TIMESPAN_ID = 406842
+TIMESPAN_ID = 551986 #551963
 DATA_DIR = 'data'
 PAGE_SIZE = 1000
 POOL_SIZE = 20
@@ -39,7 +40,7 @@ def _top_image_worker(s):
         'metadata': s,
         'top_image': top_image_from_html(s['url'], s['raw_first_download_file']),
         'inlink_count': s['inlink_count'],
-        'facebook_shares': s['facebook_shares']
+        'fb_count': s['fb_count']
     }
 
 
@@ -49,6 +50,7 @@ def top_images_in_timespan(topics_id, timespans_id):
     more_pages = True
     top_images = []
     pool = Pool(processes=POOL_SIZE)
+    pagesPulled = 0
     timespan_top_images = []
     while more_pages:
         logger.info("  Starting a page:")
@@ -62,25 +64,22 @@ def top_images_in_timespan(topics_id, timespans_id):
         # TODO: pull out all the story_ids in the while loop and then fetch the HTML in parallel batches to speed it up
         story_ids = [str(s['stories_id']) for s in story_page['stories']]
         logger.info("    fetching story html...")
+        pagesPulled += 1
+        logger.info('pages pulled ' + str(pagesPulled))
         try:
+            #get inlinks and fb_counts for visualization purposes
             html_stories = mc.storyList(solr_query="stories_id:({})".format(' '.join(story_ids)), raw_1st_download=True,
                                     rows=PAGE_SIZE)
+            for h in html_stories: #merge story info with raw html
 
-            print("get inlinks")
-            for h in html_stories:
-                for i in h['story_tags']:
-                    stories_id = i['stories_id']
-                    url_inlinks = "http://localhost:5000/api/topics/{}/stories/{}/inlinks".format(topics_id, stories_id)
-                    inlinks = requests.get(url_inlinks)
-                    if not inlinks:
-                        logger.info("can't get story info")
-                        print(inlinks)
-                        continue
+                h['inlink_count'] = [s['media_inlink_count'] for s in story_page['stories'] if
+                                         s['stories_id'] == h['stories_id']][0]
+                h['fb_count'] = [s['facebook_share_count'] for s in story_page['stories'] if
+                                         s['stories_id'] == h['stories_id']][0]
 
-                    data = json.loads(inlinks.content)
-                    h['inlink_count'] =len(data['stories'])
+
         except mediacloud.error.MCException as mce:
-            # when there is nno timespan (ie. an ungenerated version you are adding subtopics to)
+            # when there is no timespan (ie. an ungenerated version you are adding subtopics to)
             print(mce)
 
         logger.info("    parsing out images (in parallel)...")
@@ -89,8 +88,8 @@ def top_images_in_timespan(topics_id, timespans_id):
             logger.info("  done with page ({} top images)".format(len(timespan_top_images)))
             top_images += timespan_top_images
         except TypeError as te:
-            # when there is nno timespan (ie. an ungenerated version you are adding subtopics to)
-            print(te)
+            # when there is no timespan (ie. an ungenerated version you are adding subtopics to)
+            logger.info(te)
 
 
         if 'next' in story_page['link_ids']:
@@ -120,10 +119,11 @@ for info in top_images:
         'media_url': info['metadata']['media_url'],
         'publish_date': info['metadata']['publish_date'],
         'inlink_count': info['inlink_count'],
-        'fb_count': info['facebook_shares'],
+        'fb_count': info['fb_count'],
     }
     data.append(item)
 
+#sort by fb_count
 sorted_data = sorted(data, key=lambda k: k['fb_count'])
 json_file_path = os.path.join(DATA_DIR, 'images-{}-{}.json'.format(TOPIC_ID, TIMESPAN_ID))
 with open(json_file_path, 'w') as outfile:
