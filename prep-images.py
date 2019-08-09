@@ -29,7 +29,7 @@ file_name = sys.argv[1]
 
 def _image_worker(row):
     dest_image_fn = os.path.join(image_dir_path, str(row['stories_id']))
-    dest_image_fn = "{}.jpg".format(dest_image_fn) #ensure jpg..
+    dest_image_fn = "{}.jpg.jpg".format(dest_image_fn) #ensure jpg..  TODO issue
     logger.info("image {}".format(dest_image_fn))
     try:
         # This will *not* re-download if a file is there
@@ -66,11 +66,12 @@ if __name__ == "__main__":
     # updated_data = pool.map(_image_worker, data)
     # pool.terminate()
     updated_data =[]
-
     for d in data:
-        logger.info("data...{}".format(d))
-        row = _image_worker(d)
-        updated_data.append(row)
+        has_fb_count = d['fb_count'] # for my purposes, I only want pics that have fb links
+        if has_fb_count > 31:
+            logger.info("data...{} {}".format(len(updated_data), d))
+            row = _image_worker(d)
+            updated_data.append(row)
     logger.info("done")
     # update json with relevant metadata
 
@@ -79,7 +80,7 @@ if __name__ == "__main__":
     logger.info("done w updated json file")
 
 
-    image_dir_path_csv = "{}.csv".format(image_dir_path)
+    image_dir_path_csv = "{}-dataset.csv".format(file_name.replace('.json', ''))
     newlist = sorted(updated_data, key=lambda k: k['fb_count'])
     wr = csv.writer(open(image_dir_path_csv, 'w'), quoting=csv.QUOTE_ALL)
     wr.writerow(newlist[0].keys())

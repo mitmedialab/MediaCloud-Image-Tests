@@ -97,7 +97,8 @@ def download_media(url, fn):
     Downloads an image from the open web.
     """
     # Download the image
-    fn = "{}.jpg".format(fn)
+    if 'jpg' not in fn:
+        fn = "{}.jpg".format(fn) #don't add a redundant .jpg suffix
     logger.info("download media attempt {}, {}".format(url, fn))
     r = {}
     try:
@@ -146,9 +147,11 @@ def download_media_and_return_dhash(url, fn):
             img_size = os.path.getsize(fn)
             try:
                 dhash = str(imagehash.dhash(img, hash_size=8))
+                return dhash, img_size
             except Error as e:
                 logger.error("failing to calc dhash".format(e))
-            return dhash, img_size
+        return NO_HASH, 0
 
-    logger.info("NO hash read")
-    return NO_HASH, 0
+    return dhash, img_size
+
+
