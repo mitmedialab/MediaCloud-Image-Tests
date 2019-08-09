@@ -2,8 +2,10 @@ import os
 import json
 import sys
 import logging
+import pandas as pd
 from multiprocessing import Pool
-
+import json
+import csv
 from doppler.image_utils import download_media_and_return_dhash, NO_HASH
 
 """
@@ -16,7 +18,8 @@ to domain owners if a lot of the images are from the same domain.
 
 logger = logging.getLogger(__file__)
 
-POOL_SIZE = 20
+
+POOL_SIZE = 10
 
 if len(sys.argv) is not 2:
     logger.error("You must pass in a path to a .json file, like examples/caravan-news-images.json")
@@ -25,19 +28,22 @@ file_name = sys.argv[1]
 
 
 def _image_worker(row):
-    dest_image_path = os.path.join(image_dir_path, str(row['stories_id']))
+    dest_image_fn = os.path.join(image_dir_path, str(row['stories_id']))
+    dest_image_fn = "{}.jpg".format(dest_image_fn) #ensure jpg..
+    logger.info("image {}".format(dest_image_fn))
     try:
         # This will *not* re-download if a file is there
-        d_hash, img_size = download_media_and_return_dhash(row['image_url'], dest_image_path)
+        d_hash, img_size = download_media_and_return_dhash(row['image_url'], dest_image_fn)
         row['deleted'] = (img_size == 0)
         row['d_hash'] = d_hash
-        row['image_path'] = os.path.abspath(dest_image_path)
+        row['image_path'] = os.path.abspath(dest_image_fn)
         row['img_size'] = img_size
-    except OSError:
+    except OSError as e:
         # happens when the image file doesn't download right
+        logger.info("get image dhash failed {}".format(e))
         row['deleted'] = True
         row['d_hash'] = NO_HASH
-        row['image_path'] = os.path.abspath(dest_image_path)
+        row['image_path'] = os.path.abspath(dest_image_fn)
         row['img_size'] = 0
     return row
 
@@ -49,17 +55,36 @@ if __name__ == "__main__":
     with open(json_path, 'r') as f:
         data = json.load(f)
     # set up a place to put the images
-    image_dir_path = '{}-files'.format(file_name.replace('.json', ''))
+    image_dir_path = './{}-files'.format(file_name.replace('.json', ''))
     if not os.path.exists(image_dir_path):
         os.makedirs(image_dir_path)
     logger.info("Will save images to {}".format(image_dir_path))
     # download each image and grab relevant metadata
     logger.info("Starting parallel download of {} images...".format(len(data)))
-    pool = Pool(processes=POOL_SIZE)
-    updated_data = pool.map(_image_worker, data)
-    pool.terminate()
+    #pooling isn't working reliably for me so am commenting out
+    # pool = Pool(processes=POOL_SIZE)
+    # updated_data = pool.map(_image_worker, data)
+    # pool.terminate()
+    updated_data =[]
+
+    for d in data:
+        logger.info("data...{}".format(d))
+        row = _image_worker(d)
+        updated_data.append(row)
     logger.info("done")
     # update json with relevant metadata
+
     with open(json_path, 'w') as outfile:
         json.dump(updated_data, outfile)
-    logger.info("Updated data in {}".format(file_name))
+    logger.info("done w updated json file")
+
+
+    image_dir_path_csv = "{}.csv".format(image_dir_path)
+    newlist = sorted(updated_data, key=lambda k: k['fb_count'])
+    wr = csv.writer(open(image_dir_path_csv, 'w'), quoting=csv.QUOTE_ALL)
+    wr.writerow(newlist[0].keys())
+    for row in newlist:
+        print(row)
+        wr.writerow(row.values())
+
+

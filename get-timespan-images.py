@@ -13,9 +13,9 @@ import doppler
 logger = logging.getLogger(__file__)
 
 TOPIC_ID = 3132  # abortion in us
-TIMESPAN_ID = 551986 #551963
+TIMESPAN_ID = 551981  # be sure to only use 1 week timespans otherwise pooling will likely timeout/crash
 DATA_DIR = 'data'
-PAGE_SIZE = 1000
+PAGE_SIZE = 500
 POOL_SIZE = 20
 
 s = requests.Session()

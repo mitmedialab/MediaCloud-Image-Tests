@@ -7,13 +7,21 @@ import shutil
 import torchvision
 from PIL import Image
 import imagehash
+import logging
 import matplotlib.pyplot as plt
+
+logger = logging.getLogger(__file__)
 
 NO_HASH = 'NOHASH'
 
+logger.info("create session")
 s = requests.Session()
-retries = Retry(total=5, backoff_factor=1, status_forcelist=[502, 503, 504])
-s.mount('http://', HTTPAdapter(max_retries=retries))
+# retries = Retry(total=0, backoff_factor=1, status_forcelist=[502, 503, 504])
+#try:
+#    s.mount('http://', HTTPAdapter(max_retries=0))
+#except IOError:
+#    logger.error("http adapter issue")
+
 
 
 def resize_image(tile, tile_width, tile_height, aspect_ratio=False):
@@ -38,13 +46,19 @@ def read_image(img_file):
     """
     Reads an image either from memeory or from the web!
     """
+    img = {}
     if os.path.exists(img_file):
         # from disk...
         img = Image.open(img_file)
     else:
-        # from the web...
-        r = requests.get(img_file, stream=True)
-        img = Image.open(io.BytesIO(r.content))
+        # allow for a delay with timeout
+        r = {}
+        try:
+            r = requests.get(img_file, timeout=(2,5), stream=True)
+            img = Image.open(io.BytesIO(r.content))
+        except IOError as e:
+            logger.info("get image, error {}".format(e))
+
 
     return img
 
@@ -83,15 +97,29 @@ def download_media(url, fn):
     Downloads an image from the open web.
     """
     # Download the image
-    r = s.get(url, stream=True)
+    fn = "{}.jpg".format(fn)
+    logger.info("download media attempt {}, {}".format(url, fn))
+    r = {}
+    try:
+        r = s.get(url, timeout=2, stream=True)
+    except requests.Timeout as t:
+        logger.error("timeout {}".format(t))
+    except requests.HTTPError as e:
+        logger.error("failing {}".format(e))
+
+    if not r:
+        return False
+    logger.info("download media finsihed")
     if not r.status_code == 200:
+        logger.info("can't download media")
         return False
 
     # download the image locally
     with open(fn, 'wb') as file:
+        logger.info("opening file")
         r.raw.decode_content = True
         shutil.copyfileobj(r.raw, file)
-
+    logger.info("download media done")
     return True
 
 
@@ -108,16 +136,19 @@ def download_media_and_return_dhash(url, fn):
         if img_size != 0:
             # read the image and calculate the hash
             img = read_image(fn)
+            logger.info("path exists, hash read")
             dhash = str(imagehash.dhash(img, hash_size=8))
-
-            return dhash, img_size
     else:
         if download_media(url, fn):
-            # calculate the hash
+            #calculate the hash
+            dhash = NO_HASH
             img = read_image(fn)
             img_size = os.path.getsize(fn)
-            dhash = str(imagehash.dhash(img, hash_size=8))
-
+            try:
+                dhash = str(imagehash.dhash(img, hash_size=8))
+            except Error as e:
+                logger.error("failing to calc dhash".format(e))
             return dhash, img_size
 
+    logger.info("NO hash read")
     return NO_HASH, 0
