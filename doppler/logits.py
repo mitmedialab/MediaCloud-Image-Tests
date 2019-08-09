@@ -8,6 +8,8 @@ from torch.utils.data.dataset import Dataset
 from torch.utils.data import DataLoader
 from torchvision import models, transforms
 import logging
+import csv
+import json
 
 from doppler import skip_hash, cols_conv_feats, filename_without_extension
 from doppler.image_utils import read_and_transform_image
@@ -63,7 +65,7 @@ def build(json_file_path, logits_file_path, image_path_property='f_img', index_p
     logger.info("  reading {}...".format(json_file_path))
     df = pd.read_json(json_file_path,  orient='records')
     logger.info("  loaded {} records ".format(df.shape[0]))
-    df = df[~df[index_property].isin(skip_hash)]
+    df = df[~df[index_property].isin(skip_hash)] #ignore records w no hash
     # Set up chain to transform images into the Tensors needed by PyTorch
     # The image needs to be specific dimensions, normalized, and converted to a Tensor to be read into a PyTorch model.
     scaler = transforms.Resize((224, 224))
@@ -89,13 +91,12 @@ def build(json_file_path, logits_file_path, image_path_property='f_img', index_p
                              num_workers=8)
     res50_conv = load_resnet_for_feature_extraction()
     logger.info("  Processing data...".format(logits_file_path))
-    # now got through our data
+    # now go through our data
     for (X, img_file, idx) in tqdm(data_loader):
         X = X.to(device)
         logits = res50_conv(X)
         # logits.size() # [`batch_size`, 2048, 1, 1])
         logits = logits.squeeze()  # remove the extra dims
-        # logits.size() # [`batch_size`, 2048]
         # n_dimensions = logits.size(1)
         logits_dict = dict(zip(idx, logits.cpu().data.numpy()))
         # {'filename' : np.array([x0, x1, ... x2047])}
@@ -104,6 +105,8 @@ def build(json_file_path, logits_file_path, image_path_property='f_img', index_p
                                          orient='index')
         # add a column for the filename of images...
         df_conv[image_path_property] = img_file
+        if idx == 10: # show a sample
+            logger.info("  loaded this {} conv record ".format(df_conv))
         # write to file
         if os.path.exists(logits_file_path):
             df_conv.to_csv(logits_file_path, mode='a',
@@ -116,6 +119,6 @@ def build(json_file_path, logits_file_path, image_path_property='f_img', index_p
 if __name__ == "__main__":
     json_path = sys.argv[1]
     logger.info("Reading from {}".format(json_path))
-    filename = filename_without_extension(json_path)
-    logits_file_path = os.path.join('./', 'data', '{}-logits.csv.gz'.format(filename))
+    logits_file_path = './{}-logits.csv.gz'.format(json_path.replace('.json', ''))
+
     build(json_path, logits_file_path, image_path_property='image_path')
