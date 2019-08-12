@@ -12,7 +12,6 @@ logger = logging.getLogger(__file__)
 
 DATA_DIR = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'data')
 
-
 def build(filename, logits_file_path, full_metadata_file_path, sample_dataset_file_path,
           date_col_name='created_at', image_path_property='f_img'):
     logging.info("Starting to build mosaic")
@@ -23,6 +22,7 @@ def build(filename, logits_file_path, full_metadata_file_path, sample_dataset_fi
     metric = 'euclidean'
     min_dist = 0.5
     training_set_size = 500 #10000
+    constrained_training_set_size = training_set_size
     overwrite_model = False  # set to True to re-train the model.
 
     # Model files
@@ -37,7 +37,10 @@ def build(filename, logits_file_path, full_metadata_file_path, sample_dataset_fi
             df_conv = pd.read_csv(logits_file_path,
                                   index_col=0,
                                   compression='gzip')
-            training_set = df_conv[cols_conv_feats].sample(training_set_size, random_state=303)
+            print(len(df_conv))
+            if len(df_conv) < training_set_size:
+                constrained_training_set_size = len(df_conv)
+            training_set = df_conv[cols_conv_feats].sample(constrained_training_set_size, random_state=303)
         else:
             training_set = pd.read_csv(file_training_set,
                                        index_col=0)
@@ -59,11 +62,11 @@ def build(filename, logits_file_path, full_metadata_file_path, sample_dataset_fi
         encoder
 
     # Join the image metadata with convolutional features
-    """
+
     if not os.path.exists(full_metadata_file_path):
         # Read image metadata
-        df_media = pd.read_csv(sample_dataset_file_path,
-                               compression='gzip')
+        df_media = pd.read_csv(sample_dataset_file_path)
+        #                       compression='gzip')
         df_media = df_media[~df_media['d_hash'].isin(skip_hash)]
         print(len(df_media))
 
@@ -80,43 +83,63 @@ def build(filename, logits_file_path, full_metadata_file_path, sample_dataset_fi
                               right_on='index').sort_values(by=date_col_name,
                                                             ascending=True))
         df_merged[date_col_name] = pd.to_datetime(df_merged[date_col_name])
-        df_merged.to_csv(full_metadata_file_path,
-                         compression='gzip')
-    else:
+        df_merged.to_csv(full_metadata_file_path)
+        #                 compression='gzip')
+    else:   # file already exists
         df_merged = pd.read_csv(full_metadata_file_path,
-                                index_col=0,
-                                compression='gzip')
+                                index_col=0)
+                                #compression='gzip')
         df_merged[date_col_name] = pd.to_datetime(df_merged[date_col_name],
                                                   format='%Y-%m-%d %H:%M:%S')
-    """
-    logger.info("  Read in logits from {}".format(logits_file_path))
-    df_merged = pd.read_csv(logits_file_path, index_col=0, compression='gzip')
+
+    logger.info("  merged records {}".format(len(df_merged)))
+
 
     # build the mosaic
     # variables for the mosaic
-    # tile_width, tile_height = 36, 28  # pixel dimenstions per image
-    nx, ny = 50, 40  # number of images in the x and y axis
+    tile_width, tile_height = 36, 28  # pixel dimenstions per image
+    nx, ny = 20, 20  # number of images in the x and y axis TODO best way to evaluate images? df_merged len?
     sample_size = min(nx * ny, df_merged.shape[0])
-    # aspect_ratio = float(tile_width) / tile_height
+    logging.info(" shape {}".format(df_merged.shape[0]))
+    logging.info(" sample size {}".format(sample_size))
     # sample the dataset
-    df_sample = df_merged.sample(sample_size, random_state=303)
+    df_sample = df_merged.sample(sample_size, weights='fb_count', random_state=303)
+
+    sorted_sample = df_sample.sort_values(by=['fb_count'])
     # min_date = df_sample[date_col_name].min()
     # max_date = df_sample[date_col_name].max()
-    images = df_sample[image_path_property]
-    embeddings = encoder.transform(df_sample[cols_conv_feats].values)
+    images = sorted_sample[image_path_property]
+    fb_counts = sorted_sample['fb_count']
+    titles = sorted_sample['story_title']
+    urls = sorted_sample['story_url']
+    origins = sorted_sample['media_url']
+    # data frame set of images? what is this?
+    logging.info("  Sample images {}".format(sorted_sample))
+    embeddings = encoder.transform(sorted_sample[cols_conv_feats].values)
 
+
+    timespan_id=filename.split("-")[2]
     # build the scatterplot
-    scatterplot_image_path = os.path.join(DATA_DIR, 'scatterplot.png')
+    scatterplot_image_path = os.path.join(DATA_DIR, 'scatterplot-{}.png'.format(timespan_id))
+    scatterplot_image_html = os.path.join(DATA_DIR, 'scatterplot-{}.html'.format(timespan_id))
     logging.info("  Building scatterplot image to {}...".format(scatterplot_image_path))
-    image = mosaic_utils.scatterplot_images(embeddings, images, width=2400, height=1800, max_dim=100)
+    image = mosaic_utils.scatterplot_images(embeddings, images,
+                                            fb_counts,
+                                            titles,
+                                            origins,
+                                            width=2400, height=1800, max_dim=100)
     image.save(scatterplot_image_path)
     logging.info("  done")
 
     # and now make the mosaic
-    tile_width, tile_height = 36, 2
-    mosaic_file_path = os.path.join(DATA_DIR, 'mosaic.png')
+    tile_width, tile_height = 150, 100
+    mosaic_file_path = os.path.join(DATA_DIR, 'mosaic-{}.png'.format(timespan_id))
     logging.info("  Building mosaic image to {}...".format(mosaic_file_path))
     mosaic_utils.generate_mosaic(embeddings, images,
+                                 fb_counts=fb_counts,
+                                 titles=titles,
+                                 origins=origins,
+                                 urls = urls,
                                  mosaic_width=nx, mosaic_height=ny,
                                  tile_width=tile_width, tile_height=tile_height,
                                  save_as_file=mosaic_file_path, verbose=True, return_image=True,
@@ -128,7 +151,7 @@ if __name__ == "__main__":
     json_path = sys.argv[1]
     filename = filename_without_extension(json_path)
     logits_file_path = os.path.join('./', 'data', '{}-logits.csv.gz'.format(filename))
-    full_metadata_file_path = os.path.join('./', 'data', '{}-metadata.csv.gz'.format(filename))
-    sample_dataset_file_path = os.path.join('./', 'data', '{}-dataset.csv.gz'.format(filename))
+    full_metadata_file_path = os.path.join('./', 'data', '{}-metadata.csv'.format(filename))
+    sample_dataset_file_path = os.path.join('./', 'data', '{}-dataset.csv'.format(filename))
     build(filename, logits_file_path, full_metadata_file_path, sample_dataset_file_path,
           date_col_name='publish_date', image_path_property='image_path')
