@@ -21,7 +21,7 @@ def build(filename, logits_file_path, full_metadata_file_path, sample_dataset_fi
     n_neighbors = 25
     metric = 'euclidean'
     min_dist = 0.5
-    training_set_size = 500 #10000
+    training_set_size = 1000 #10000
     constrained_training_set_size = training_set_size
     overwrite_model = False  # set to True to re-train the model.
 
@@ -59,7 +59,6 @@ def build(filename, logits_file_path, full_metadata_file_path, sample_dataset_fi
     else:
         logger.info("  Loading existing embeddings model")
         encoder = joblib.load(file_encoder)
-        encoder
 
     # Join the image metadata with convolutional features
 
@@ -98,7 +97,7 @@ def build(filename, logits_file_path, full_metadata_file_path, sample_dataset_fi
     # build the mosaic
     # variables for the mosaic
     tile_width, tile_height = 36, 28  # pixel dimenstions per image
-    nx, ny = 20, 20  # number of images in the x and y axis TODO best way to evaluate images? df_merged len?
+    nx, ny = 50, 50  # number of images in the x and y axis TODO best way to evaluate images? df_merged len?
     sample_size = min(nx * ny, df_merged.shape[0])
     logging.info(" shape {}".format(df_merged.shape[0]))
     logging.info(" sample size {}".format(sample_size))
@@ -121,12 +120,13 @@ def build(filename, logits_file_path, full_metadata_file_path, sample_dataset_fi
     timespan_id=filename.split("-")[2]
     # build the scatterplot
     scatterplot_image_path = os.path.join(DATA_DIR, 'scatterplot-{}.png'.format(timespan_id))
-    scatterplot_image_html = os.path.join(DATA_DIR, 'scatterplot-{}.html'.format(timespan_id))
     logging.info("  Building scatterplot image to {}...".format(scatterplot_image_path))
     image = mosaic_utils.scatterplot_images(embeddings, images,
                                             fb_counts,
                                             titles,
                                             origins,
+                                            urls=urls,
+                                            save_as_file=scatterplot_image_path,
                                             width=2400, height=1800, max_dim=100)
     image.save(scatterplot_image_path)
     logging.info("  done")

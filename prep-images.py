@@ -28,30 +28,50 @@ file_name = sys.argv[1]
 
 
 def _image_worker(row):
-    dest_image_fn = os.path.join(image_dir_path, str(row['stories_id']))
-    dest_image_fn = "{}.jpg.jpg".format(dest_image_fn) #ensure jpg..  TODO issue
-    logger.info("image {}".format(dest_image_fn))
-    try:
-        # This will *not* re-download if a file is there
-        d_hash, img_size = download_media_and_return_dhash(row['image_url'], dest_image_fn)
-        row['deleted'] = (img_size == 0)
-        row['d_hash'] = d_hash
-        row['image_path'] = os.path.abspath(dest_image_fn)
-        row['img_size'] = img_size
-    except OSError as e:
-        # happens when the image file doesn't download right
-        logger.info("get image dhash failed {}".format(e))
-        row['deleted'] = True
-        row['d_hash'] = NO_HASH
-        row['image_path'] = os.path.abspath(dest_image_fn)
-        row['img_size'] = 0
-    return row
+    if row['fb_count']:
+        dest_image_fn = os.path.join(image_dir_path, str(row['stories_id']))
+        dest_image_fn = "{}.jpg.jpg".format(dest_image_fn) #ensure jpg..  TODO issue
+        logger.info("image {}".format(dest_image_fn))
+        try:
+            # This will *not* re-download if a file is there
+            d_hash, img_size = download_media_and_return_dhash(row['image_url'], dest_image_fn)
+            row['deleted'] = (img_size == 0)
+            row['d_hash'] = d_hash
+            row['image_path'] = os.path.abspath(dest_image_fn)
+            row['img_size'] = img_size
+        except OSError as e:
+            # happens when the image file doesn't download right
+            logger.info("get image dhash failed {}".format(e))
+            row['deleted'] = True
+            row['d_hash'] = NO_HASH
+            row['image_path'] = os.path.abspath(dest_image_fn)
+            row['img_size'] = 0
+        return row
+    return {}
+
+
+def rewrite_json_from_csv(json_path): # convenience, not currently used
+    csv_file = "{}".format(json_path).replace('json','csv')
+    csvfile = open(csv_file, 'r')
+    jsonfile = open(json_path, 'w')
+
+
+    reader = csv.DictReader(csvfile)
+    # fieldnames = reader.fieldnames
+    for row in reader:
+        json.dump(row, jsonfile)
+        jsonfile.write('\n')
 
 
 if __name__ == "__main__":
-    # read in the sample data
-    logger.info("Reading from {}".format(file_name))
+
     json_path = file_name
+    # read in the sample data
+
+
+    logger.info("Reading from {}".format(file_name))
+    #data = [json.loads(line) for line in open(json_path, 'r')]
+
     with open(json_path, 'r') as f:
         data = json.load(f)
     # set up a place to put the images
@@ -68,7 +88,7 @@ if __name__ == "__main__":
     updated_data =[]
     for d in data:
         has_fb_count = d['fb_count'] # for my purposes, I only want pics that have fb links
-        if has_fb_count > 31:
+        if int(has_fb_count) > 0:
             logger.info("data...{} {}".format(len(updated_data), d))
             row = _image_worker(d)
             updated_data.append(row)

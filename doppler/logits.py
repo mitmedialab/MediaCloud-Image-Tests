@@ -60,7 +60,7 @@ class FeatureExtractionDataset(Dataset):
 
 
 # reduce batch_size if running low on memory
-def build(json_file_path, logits_file_path, image_path_property='f_img', index_property='d_hash', batch_size=64):
+def build(json_file_path, logits_file_path, image_path_property='f_img', index_property='d_hash', batch_size=128):
     logger.info("Starting to build logits file")
     logger.info("  reading {}...".format(json_file_path))
     df = pd.read_json(json_file_path,  orient='records')
@@ -68,9 +68,9 @@ def build(json_file_path, logits_file_path, image_path_property='f_img', index_p
     df = df[~df[index_property].isin(skip_hash)] #ignore records w no hash
     # Set up chain to transform images into the Tensors needed by PyTorch
     # The image needs to be specific dimensions, normalized, and converted to a Tensor to be read into a PyTorch model.
-    scaler = transforms.Resize((224, 224))
-    to_tensor = transforms.ToTensor()
-    normalizer = transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])
+    scaler = transforms.Resize((224, 224)) #size needed for pre-trained model such as resnet
+    to_tensor = transforms.ToTensor()  #torch.FloatTensor of shape (C x H x W) in the range [0.0, 1.0] if the PIL Image belongs to one of the modes (L, LA, P, I, F, RGB, YCbCr, RGBA, CMYK, 1)
+    normalizer = transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])  # a tensor image with mean and standard deviation
     # this is the order of operations that will occur on each image.
     transformations = transforms.Compose([scaler, to_tensor, normalizer])
 
