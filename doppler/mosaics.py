@@ -104,7 +104,7 @@ def build(filename, logits_file_path, full_metadata_file_path, sample_dataset_fi
     # sample the dataset
     df_sample = df_merged.sample(sample_size, weights='fb_count', random_state=303)
 
-    sorted_sample = df_sample.sort_values(by=['fb_count'])
+    sorted_sample = df_sample.sort_values(by=['fb_count']) # ascending=False)
     # min_date = df_sample[date_col_name].min()
     # max_date = df_sample[date_col_name].max()
     images = sorted_sample[image_path_property]
@@ -132,7 +132,7 @@ def build(filename, logits_file_path, full_metadata_file_path, sample_dataset_fi
     logging.info("  done")
 
     # and now make the mosaic
-    tile_width, tile_height = 150, 100
+    tile_width, tile_height = 125, 90
     mosaic_file_path = os.path.join(DATA_DIR, 'mosaic-{}.png'.format(timespan_id))
     logging.info("  Building mosaic image to {}...".format(mosaic_file_path))
     mosaic_utils.generate_mosaic(embeddings, images,
