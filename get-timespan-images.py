@@ -3,6 +3,7 @@ from multiprocessing import Pool
 import requests
 import mediacloud.api
 import os
+import sys
 import logging
 import json
 import csv
@@ -13,7 +14,15 @@ import doppler
 logger = logging.getLogger(__file__)
 
 TOPIC_ID = 3132  # abortion in us
-TIMESPAN_ID = 551981  # be sure to only use 1 week timespans otherwise pooling will likely timeout/crash
+TIMESPAN_ID = 551977 #largest
+
+if len(sys.argv) is not 2:
+    logger.error("Defaulting to internal topic_id and timespan_id")
+else:
+    TOPIC_ID = sys.argv[1]
+    TIMESPAN_ID = sys.argv[2]
+
+
 DATA_DIR = 'data'
 PAGE_SIZE = 500
 POOL_SIZE = 20
@@ -28,11 +37,15 @@ mc = mediacloud.api.AdminMediaCloud(MC_API_KEY)
 
 
 def top_image_from_html(url, html):
-    article = Article(url=url)
-    article.set_html(html)
-    article.parse()
-    return article.top_image
+    try:
+        article = Article(url=url)
+        article.set_html(html)
+        article.parse()
+        return article.top_image
+    except Exception as e:
+        logger.error("error reading article " + url)
 
+    return {}
 
 def _top_image_worker(s):
     return {
@@ -40,7 +53,8 @@ def _top_image_worker(s):
         'metadata': s,
         'top_image': top_image_from_html(s['url'], s['raw_first_download_file']),
         'inlink_count': s['inlink_count'],
-        'fb_count': s['fb_count']
+        'fb_count': s['fb_count'],
+        'partisan': s['partisan']
     }
 
 
@@ -77,6 +91,9 @@ def top_images_in_timespan(topics_id, timespans_id):
                 h['fb_count'] = [s['facebook_share_count'] for s in story_page['stories'] if
                                          s['stories_id'] == h['stories_id']][0]
 
+                foci = [s['foci'] for s in story_page['stories'] if
+                        s['stories_id'] == h['stories_id']][0]
+                h['partisan'] = [tag['foci_id'] for tag in foci if tag['focal_set_name'] == "Retweet Partisanship"]
 
         except mediacloud.error.MCException as mce:
             # when there is no timespan (ie. an ungenerated version you are adding subtopics to)
@@ -120,6 +137,7 @@ for info in top_images:
         'publish_date': info['metadata']['publish_date'],
         'inlink_count': info['inlink_count'],
         'fb_count': info['fb_count'],
+        'partisan': info['partisan']
     }
     data.append(item)
 

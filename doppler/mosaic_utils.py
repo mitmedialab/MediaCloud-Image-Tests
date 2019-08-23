@@ -142,7 +142,7 @@ def generate_mosaic(embeddings, images, fb_counts, titles, origins, urls, mosaic
         return mosaic
 
 
-def scatterplot_images(embeddings, images, fb_counts, titles, origins, urls,save_as_file='scatterplot.png',
+def scatterplot_images(embeddings, images, fb_counts, titles, origins, partisanship, urls,save_as_file='scatterplot.png',
                        width=2000, height=1100,
                        max_dim=40):
     """
