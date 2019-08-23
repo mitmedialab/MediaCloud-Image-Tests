@@ -130,6 +130,7 @@ def download_media_and_return_dhash(url, fn):
     Calculates a dhash and the size of the file, and returns both as a tuple.
     If the download fails, returns a placeholder 'NOHASH' and a filesize of 0.
     """
+    dhash = NO_HASH
     if os.path.exists(fn):
         # is th image exists, don't download it again.
         # calculate the size and hash

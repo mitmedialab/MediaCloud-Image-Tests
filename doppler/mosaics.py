@@ -141,6 +141,7 @@ def build(filename, logits_file_path, full_metadata_file_path, sample_dataset_fi
                                  fb_counts=fb_counts,
                                  titles=titles,
                                  origins=origins,
+                                 partisanship=partisanship,
                                  urls = urls,
                                  mosaic_width=nx, mosaic_height=ny,
                                  tile_width=tile_width, tile_height=tile_height,

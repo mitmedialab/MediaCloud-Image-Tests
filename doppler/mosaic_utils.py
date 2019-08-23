@@ -76,7 +76,7 @@ def make_csv_and_json_with_data(data):
     for row in sorted_data:
         wr.writerow(row.values())
 
-def generate_mosaic(embeddings, images, fb_counts, titles, origins, urls, mosaic_width, mosaic_height,
+def generate_mosaic(embeddings, images, fb_counts, titles, origins, partisanship, urls, mosaic_width, mosaic_height,
                     tile_width=150, tile_height=100, title="Doppler Mosaic",
                     title_rbg=(255, 255, 255), save_as_file='mosaic.png',
                     return_image=True, verbose=False):
@@ -103,7 +103,7 @@ def generate_mosaic(embeddings, images, fb_counts, titles, origins, urls, mosaic
     html_file.write(html_header)
     fnt = ImageFont.truetype('/Library/Fonts/Arial.ttf', 20)
     # iterate through each image and where it is possed to live.
-    for f_img, fb_count, title, origin, url, (idx_x, idx_y) in tqdm(zip(images, fb_counts, titles, origins, urls, grid_assignment[0]),
+    for f_img, fb_count, title, origin, partisanship, url, (idx_x, idx_y) in tqdm(zip(images, fb_counts, titles, origins, partisanship, urls, grid_assignment[0]),
                                       disable=not verbose):
         # Find exactly where the image will be
         x, y = tile_width * idx_x, tile_height * idx_y
@@ -168,7 +168,7 @@ def scatterplot_images(embeddings, images, fb_counts, titles, origins, partisans
                            size=(width, height),
                            color=(55, 61, 71))
     fnt = ImageFont.truetype('/Library/Fonts/Arial.ttf', 20)
-    for f_img, fb_count, title, origin, url, x, y in tqdm(zip(images, fb_counts, titles, origins, urls, tx, ty)):
+    for f_img, fb_count, title, origin, partisanship, url, x, y in tqdm(zip(images, fb_counts, titles, origins, partisanship, urls, tx, ty)):
         # read and resize image
         tile = Image.open(f_img)
         #media_origin_img = "https://www.google.com/s2/favicons?domain={}".format(origin)
@@ -200,8 +200,8 @@ def scatterplot_images(embeddings, images, fb_counts, titles, origins, partisans
             #img_format = "<a href='{}' target='_blank'><img class='images' src='{}' width='{}' height='{}' title='{} shares, {}' /></a>".format(
             #    url, f_img, tile_width, tile_height, fb_count, title)
             #html_file.write(img_format)
-
-            html_file.write('<area href="{}" shape="rect" coords="{}, {}, {}, {}" />'.format(f_img, x_coord, y_coord, x_coord + tile_width, y_coord + tile_height))
+            partisanship = partisanship.replace("[","").replace("]","")
+            html_file.write('<area href="{}" class="p{}" shape="rect" coords="{}, {}, {}, {}" />'.format(f_img, partisanship, x_coord, y_coord, x_coord + tile_width, y_coord + tile_height))
             img = Image.open(f_img).convert('RGBA')
             tile = resize_image(img, tile_width, tile_height, aspect_ratio)
             tileDraw = ImageDraw.Draw(tile)
