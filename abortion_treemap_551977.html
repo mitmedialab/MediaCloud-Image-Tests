@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<meta charset="utf-8">
+<head>
+	<title>Treemap layout</title>
+</head>
+
+<style>
+	body {
+		font-family: "Helvetica Neue", Helvetica, sans-serif;
+		font-size: 9px;
+	}
+
+	rect {
+		fill: black;
+		opacity: 1;
+	}
+
+	text {
+		fill: white;
+	}
+</style>
+
+<body>
+
+	<div id="my_dataviz"></div>
+
+	<script src="http://d3js.org/d3.v4.min.js"></script>
+	<script>
+
+
+function make(root) {
+
+
+	var margin = {top: 10, right: 10, bottom: 10, left: 10},
+  width = 2000,
+  height = 1000;
+	// append the svg object to the body of the page
+	var svg = d3.select("#my_dataviz")
+	.append("svg")
+	  .attr("width", width + margin.left + margin.right)
+	  .attr("height", height + margin.top + margin.bottom)
+	.append("g")
+	  .attr("transform",
+			"translate(" + margin.left + "," + margin.top + ")");
+
+	  svg
+    .selectAll("rect")
+    .data(root.leaves())
+    .enter()
+    .append('defs')
+    .append('pattern')
+                    .attr('id', function (d) { return d.data.d_hash; })
+                    .attr('patternUnits', 'userSpaceOnUse')
+                    .attr('width', function (d) { return d.x1 - d.x0; })
+                    .attr('height', function (d) { return d.y1 - d.y0; })
+      .append("image")
+        .attr("xlink:href", function(d){ return d.data.image_path })
+        .attr('width', function (d) { return d.x1 - d.x0; })
+      	.attr('height', function (d) { return d.y1 - d.y0; })
+      	.attr("x", 2);
+    
+    	  svg
+    .selectAll("rect")
+    .data(root.leaves())
+    .enter()
+    .append("rect")
+      .attr('x', function (d) { return d.x0; })
+      .attr('y', function (d) { return d.y0; })
+      .attr('width', function (d) { return d.x1 - d.x0; })
+      .attr('height', function (d) { return d.y1 - d.y0; })
+      .style("stroke", "black")
+      .style("fill", function (d) { return 'url(#' + d.data.d_hash + ')'; })
+      
+      
+      
+        svg
+    .selectAll("text")
+    .data(root.leaves())
+    .enter()
+    .append("text")
+      .attr("x", function(d){ return d.x0+5})    // +10 to adjust position (more right)
+      .attr("y", function(d){ return d.y0+20})    // +20 to adjust position (lower)
+      .text(function(d){ return d.data.media_url })
+      .attr("font-size", "15px")
+      .attr("fill", "white")
+}
+
+
+function ready(err, data) {
+	if (err) throw err;
+	 // Give the data to this cluster layout:
+  var root = d3.hierarchy(data).sum(function(d){ return d['fb_count']}) // Here the size of each leave is given in the 'value' field in input data
+
+  // Then d3.treemap computes the position of each element of the hierarchy
+  d3.treemap()
+    .size([2000,1000])
+    .padding(2)
+    (root)
+    
+	make(root);
+}
+data = d3.json("./abortion_tree_top10.json", ready);
+
+
+	</script>
+</body>
+</html>
