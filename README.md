@@ -11,7 +11,7 @@ Running the Script
 ### 1 - Extract Images from a Timespan
 
 The first step is to make a list of all the images in a timespan:
-2. edit the constants in `get-timespan-images.py` to specify the topic and timespan you want to get images for
+2. pass in the topic_id and timespan for which topic images you want OR edit the default constants in `get-timespan-images.py`
 3. run `python get-timespan-images.py` to fetch the images and generate a `.json` file to feed into the doppler
 
 
