@@ -24,8 +24,8 @@ Run the script to download and prep the images for analysis:
 
 ### 3 - Generate the scatterplot
 
-1. If you have run the scripts before, delete old files:
-  umap_training_data_1000.csv and encoder_0-5_dist_euclidean_sample_1000.pkl
+1. If you have run the scripts before, delete (and backup) old files:
+  `umap_training_data_1000.csv` and `encoder_0-5_dist_euclidean_sample_1000.pkl` and any previous logits and metadata files with the same name (topic id and timespan).
 2. Generate the logits: `python -m doppler.logits data/images-123-4321.json`
 3. Generate the scatterplot: `python -m doppler.mosaics data/images-123-4321.json`
 
