@@ -14,9 +14,9 @@ import doppler
 logger = logging.getLogger(__file__)
 
 TOPIC_ID = 3132  # abortion in us
-TIMESPAN_ID = 551977 #largest
-
-if len(sys.argv) is not 2:
+TIMESPAN_ID = 551972 #largest
+print(len(sys.argv))
+if len(sys.argv) is not 3:
     logger.error("Defaulting to internal topic_id and timespan_id")
 else:
     TOPIC_ID = sys.argv[1]
