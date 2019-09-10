@@ -190,6 +190,11 @@ def scatterplot_images(embeddings, images, fb_counts, titles, origins, partisans
                   title, fill=200, font=fnt)
         # add the image to the graph               
         x_coord = int((width - max_dim) * x)
+        partisanship = partisanship.replace("[", "").replace("]", "")
+        if partisanship not in ['', None] and int(partisanship) in [3686, 3687]:
+            x_coord = x_coord - 2000
+        elif partisanship not in ['', None] and int(partisanship) in [3689, 3690]:
+            x_coord = x_coord + 2000
         y_coord = int((height - max_dim) * y)
         img_coords = (x_coord, y_coord)
         scatterplot.paste(tile,
@@ -200,8 +205,8 @@ def scatterplot_images(embeddings, images, fb_counts, titles, origins, partisans
             #img_format = "<a href='{}' target='_blank'><img class='images' src='{}' width='{}' height='{}' title='{} shares, {}' /></a>".format(
             #    url, f_img, tile_width, tile_height, fb_count, title)
             #html_file.write(img_format)
-            partisanship = partisanship.replace("[","").replace("]","")
-            html_file.write('<area href="{}" class="p{}" shape="rect" coords="{}, {}, {}, {}" />'.format(f_img, partisanship, x_coord, y_coord, x_coord + tile_width, y_coord + tile_height))
+
+            html_file.write('<area href="{}" class="p{}" shape="rect" coords="{}, {}, {}, {}" />'.format(url, partisanship, x_coord, y_coord, x_coord + tile_width, y_coord + tile_height))
             img = Image.open(f_img).convert('RGBA')
             tile = resize_image(img, tile_width, tile_height, aspect_ratio)
             tileDraw = ImageDraw.Draw(tile)
@@ -216,3 +221,4 @@ def scatterplot_images(embeddings, images, fb_counts, titles, origins, partisans
     html_file.close()
     # write an annotation
     return scatterplot
+

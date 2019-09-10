@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<meta charset="utf-8">
+<head>
+	<title>Treemap layout</title>
+</head>
+
+<style>
+	body {
+		font-family: "Helvetica Neue", Helvetica, sans-serif;
+		font-size: 9px;
+	}
+
+	rect {
+		fill: black;
+		opacity: 1;
+	}
+
+	text {
+		fill: white;
+	}
+	div.tooltip {   
+  position: absolute;           
+  text-align: left;           
+  width: 500px;                  
+  height: 150px;                 
+  padding: 2px;             
+  font: 12px sans-serif;        
+  background-color: white;   
+  border: 0px;      
+  border-radius: 8px;           
+  pointer-events: none;         
+}
+
+.svg-container {
+    display: inline-block;
+    position: relative;
+    width: 100%;
+    padding-bottom: 100%;
+    vertical-align: top;
+    overflow: hidden;
+}
+.svg-content {
+    display: inline-block;
+    position: absolute;
+    top: 0;
+    left: 0;
+}
+</style>
+
+<body>
+
+	<div id="my_dataviz" class="svg-container"></div>
+
+	<script src="http://d3js.org/d3.v4.js"></script>
+	<script src="tree_map.js"></script>  
+<script>
+data = d3.csv("./images-3132-551981-metadata-top20.csv", ready);
+
+
+	</script>
+</body>
+</html>

@@ -4,6 +4,7 @@ import pandas as pd
 from sklearn.externals import joblib
 import umap
 import logging
+from datetime import datetime
 
 from doppler import cols_conv_feats, skip_hash, filename_without_extension
 import doppler.mosaic_utils as mosaic_utils
@@ -63,6 +64,7 @@ def build(filename, logits_file_path, full_metadata_file_path, sample_dataset_fi
     # Join the image metadata with convolutional features
 
     if not os.path.exists(full_metadata_file_path):
+        logger.info("new metadata-file")
         # Read image metadata
         df_media = pd.read_csv(sample_dataset_file_path)
         #                       compression='gzip')
@@ -85,6 +87,7 @@ def build(filename, logits_file_path, full_metadata_file_path, sample_dataset_fi
         df_merged.to_csv(full_metadata_file_path)
         #                 compression='gzip')
     else:   # file already exists
+        logger.info("Loading metadata-file")
         df_merged = pd.read_csv(full_metadata_file_path,
                                 index_col=0)
                                 #compression='gzip')
@@ -120,7 +123,7 @@ def build(filename, logits_file_path, full_metadata_file_path, sample_dataset_fi
 
     timespan_id=filename.split("-")[2]
     # build the scatterplot
-    scatterplot_image_path = os.path.join(DATA_DIR, 'scatterplot-{}.png'.format(timespan_id))
+    scatterplot_image_path = os.path.join(DATA_DIR, 'scatterplot-{}-{}.png'.format(timespan_id, datetime.now()))
     logging.info("  Building scatterplot image to {}...".format(scatterplot_image_path))
     image = mosaic_utils.scatterplot_images(embeddings, images,
                                             fb_counts,
@@ -135,7 +138,7 @@ def build(filename, logits_file_path, full_metadata_file_path, sample_dataset_fi
 
     # and now make the mosaic
     tile_width, tile_height = 125, 90
-    mosaic_file_path = os.path.join(DATA_DIR, 'mosaic-{}.png'.format(timespan_id))
+    mosaic_file_path = os.path.join(DATA_DIR, 'mosaic-{}-{}.png'.format(timespan_id, datetime.now()))
     logging.info("  Building mosaic image to {}...".format(mosaic_file_path))
     mosaic_utils.generate_mosaic(embeddings, images,
                                  fb_counts=fb_counts,
