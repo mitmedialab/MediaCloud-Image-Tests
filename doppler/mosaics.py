@@ -116,6 +116,7 @@ def build(filename, logits_file_path, full_metadata_file_path, sample_dataset_fi
     urls = sorted_sample['story_url']
     origins = sorted_sample['media_url']
     partisanship = sorted_sample['partisan']
+    partisanship = partisanship.replace("[", "").replace("]", "")
     # data frame set of images? what is this?
     logging.info("  Sample images {}".format(sorted_sample))
     embeddings = encoder.transform(sorted_sample[cols_conv_feats].values)

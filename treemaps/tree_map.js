@@ -10,7 +10,7 @@ function make(root) {
 var svg = d3.select("#my_dataviz")
 	.append("svg")
   .attr("preserveAspectRatio", "xMinYMin meet")
-  .attr("viewBox", "0 0 3000 1000")
+  .attr("viewBox", "0 0 3000 2000")
     .classed("svg-content", true)
 	.append("g")
   	.attr("transform",
@@ -53,8 +53,9 @@ var svg = d3.select("#my_dataviz")
 	  .attr('width', function (d) { return d.x1 - d.x0; })
 	  .attr('height', function (d) { return d.y1 - d.y0; })
 	  .attr('object-fill', "fill")
-	  .style("stroke", "gray")
-	  .style("fill", function (d) { return 'url(#' + d.data.d_hash + ')'; }) // can't set repeat etc
+	  .style("stroke", function (d) { return parseInt(d.data.partisan.replace("[","").replace("]",""), 10) < 3688 ? "blue" : (parseInt(d.data.partisan.replace("[","").replace("]",""), 10) > 3688 ? "red" : "gray") })
+	  .style("stroke-width", "6")
+	  .style("fill", function (d) { return 'url(#' + d.data.d_hash + ') red'; }) // can't set repeat etc
 	  .on("click", function(d){
 	  	window.open(d.data.story_url,'_blank'); ;
 	  })
@@ -63,10 +64,10 @@ var svg = d3.select("#my_dataviz")
 				.duration(200)      
 				.style("opacity", .9);     
 			 
-			div .html(d.data.media_url + "<br/>"  + d.data.story_url + "<br/>"  + d.data.fb_count + "<br/>"  + d.data.partisan)  
+
+			div .html("<img src='"+ d.data.image_url + "' /><br/><h3>"  + d.data.story_url + "</h3><br/>"  + d.data.fb_count + "<br/>"  + d.data.partisan)  
 				.style("left", (d3.event.pageX) + "px")     
-				.style("top", (d3.event.pageY - 28) + "px");
-				
+				.style("top", (d3.event.pageY - 28) + "px");		
 				//.style("cursor","pointer");   
 		})
 		.on("mouseout", function(d){
