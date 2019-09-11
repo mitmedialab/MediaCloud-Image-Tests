@@ -1,3 +1,25 @@
+function getPartisanCode(code){
+	return code.replace("[","").replace("]","")
+}
+
+function prettyPartisan(code){
+	if (code == "3686") return "Center";
+	else if (code == "3687") return "Center Left";
+	else if (code == "3689") return "Left";
+	else if (code == "3688") return "Center Right";
+	else if (code == "3690") return "Right";
+	else return "unknown";
+}
+
+function partisanColor(code){
+	if (code == "3686") return "gray";
+	else if (code == "3687") return "lightblue";
+	else if (code == "3689") return "blue";
+	else if (code == "3688") return "lightred";
+	else if (code == "3690") return "red";
+	else return "gray";
+}
+
 function make(root) {
 
 
@@ -53,7 +75,7 @@ var svg = d3.select("#my_dataviz")
 	  .attr('width', function (d) { return d.x1 - d.x0; })
 	  .attr('height', function (d) { return d.y1 - d.y0; })
 	  .attr('object-fill', "fill")
-	  .style("stroke", function (d) { return parseInt(d.data.partisan.replace("[","").replace("]",""), 10) < 3688 ? "blue" : (parseInt(d.data.partisan.replace("[","").replace("]",""), 10) > 3688 ? "red" : "gray") })
+	  .style("stroke", function (d) { return partisanColor(getPartisanCode(d.data.partisan)) })
 	  .style("stroke-width", "6")
 	  .style("fill", function (d) { return 'url(#' + d.data.d_hash + ') red'; }) // can't set repeat etc
 	  .on("click", function(d){
@@ -65,7 +87,7 @@ var svg = d3.select("#my_dataviz")
 				.style("opacity", .9);     
 			 
 
-			div .html("<img src='"+ d.data.image_url + "' /><br/><h3>"  + d.data.story_url + "</h3><br/>"  + d.data.fb_count + "<br/>"  + d.data.partisan)  
+			div .html("<img class='overlay' src='"+ d.data.image_url + "' /><br/><h3>"  + d.data.story_title + "<br /><h3> from " + d.data.media_name + "<br /><h4>Published on: " + d.data.publish_date + "</h4><h4>FB Shares: "  + d.data.fb_count + "<br/>Partisan category: "  + prettyPartisan(getPartisanCode(d.data.partisan)))  
 				.style("left", (d3.event.pageX) + "px")     
 				.style("top", (d3.event.pageY - 28) + "px");		
 				//.style("cursor","pointer");   
@@ -107,6 +129,7 @@ function ready(err, data) {
     	
   	root.sum(function(d) { return +d.fb_count }) ;  // Compute the numeric value for each entity
 
+	console.log("sum is " + root);
   // Then d3.treemap computes the position of each element of the hierarchy
   // The coordinates are added to the root object above
   	d3.treemap()
