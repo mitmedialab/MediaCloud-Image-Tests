@@ -88,7 +88,8 @@ if __name__ == "__main__":
     updated_data =[]
     for d in data:
         has_fb_count = d['fb_count'] # for my purposes, I only want pics that have fb links
-        if int(has_fb_count) > 0:
+        has_inlink_count = d['inlink_count']  # for my purposes, I only want pics that have fb links
+        if int(has_inlink_count) > 60:
             logger.info("data...{} {}".format(len(updated_data), d))
             row = _image_worker(d)
             updated_data.append(row)

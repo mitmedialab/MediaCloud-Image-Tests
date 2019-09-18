@@ -13,9 +13,9 @@ function prettyPartisan(code){
 
 function partisanColor(code){
 	if (code == "3686") return "gray";
-	else if (code == "3687") return "lightblue";
+	else if (code == "3687") return "#586af1";
 	else if (code == "3689") return "blue";
-	else if (code == "3688") return "lightred";
+	else if (code == "3688") return "#ee597c";
 	else if (code == "3690") return "red";
 	else return "gray";
 }
@@ -31,9 +31,9 @@ function make(root) {
 
 var svg = d3.select("#my_dataviz")
 	.append("svg")
-  .attr("preserveAspectRatio", "xMinYMin meet")
-  .attr("viewBox", "0 0 3000 2000")
-    .classed("svg-content", true)
+  		.attr("preserveAspectRatio", "xMinYMin meet")
+  		.attr("viewBox", "0 -150 3000 2000")
+    	.classed("svg-content", true)
 	.append("g")
   	.attr("transform",
         "translate(" + margin.left + "," + margin.top + ")");
@@ -64,7 +64,6 @@ var svg = d3.select("#my_dataviz")
 		.style("fill","grey")
 		.style("opacity", .9);
 
-
 	svg
     .selectAll("rect")
     .data(root.leaves())
@@ -87,7 +86,7 @@ var svg = d3.select("#my_dataviz")
 				.style("opacity", .9);     
 			 
 
-			div .html("<img class='overlay' src='"+ d.data.image_url + "' /><br/><h3>"  + d.data.story_title + "<br /><h3> from " + d.data.media_name + "<br /><h4>Published on: " + d.data.publish_date + "</h4><h4>FB Shares: "  + d.data.fb_count + "<br/>Partisan category: "  + prettyPartisan(getPartisanCode(d.data.partisan)))  
+			div .html("<img class='overlay' src='"+ d.data.image_url + "' /><br/><h3>"  + d.data.story_title + "<br /><h3> from " + d.data.media_name + "<br /><h4>Published on: " + d.data.publish_date + "</h4><h4>"  + d.data.inlink_count + " Inlinks over week,  "  + d.data.fb_count + " FB Shares over all</h4><br/>Partisan category: "  + prettyPartisan(getPartisanCode(d.data.partisan)))  
 				.style("left", (d3.event.pageX) + "px")     
 				.style("top", (d3.event.pageY - 28) + "px");		
 				//.style("cursor","pointer");   
@@ -97,7 +96,6 @@ var svg = d3.select("#my_dataviz")
 				.duration(500)      
 				.style("opacity", 0);
 		});
-      
       
     svg
     	.selectAll("text")
@@ -110,15 +108,39 @@ var svg = d3.select("#my_dataviz")
 		  .attr("font-size", "15px")
 		  .attr("fill", "white")
 		  
-		  
-		  
-
 }
 
 
-function ready(err, data) {
-  	var width = 2000;
-  	var height = 1000;
+function ready(root) {
+  // Then d3.treemap computes the position of each element of the hierarchy
+  // The coordinates are added to the root object above
+    width = 2000,
+  	height = 1000;
+  	d3.treemap()
+    	.size([width, height])
+    	.padding(4)
+    	(root);
+    
+	make(root);
+}
+
+
+function readyInlinks(err, data) {
+	if (err) throw err;
+	 // Give the data to this cluster layout:
+	  // stratify the data: reformatting for d3.js
+  	var root = d3.stratify()
+    	.id(function(d) { return d.d_hash; })   // Name of the entity (column name is name in csv)
+    	.parentId(function(d) { return d.parent; })   // Name of the parent (column name is parent in csv)
+    	(data);
+    	
+  	root.sum(function(d) { return +d.inlink_count }) ;  // Compute the numeric value for each entity
+
+	ready(root)
+}
+
+
+function readyFB(err, data) {
 	if (err) throw err;
 	 // Give the data to this cluster layout:
 	  // stratify the data: reformatting for d3.js
@@ -128,14 +150,6 @@ function ready(err, data) {
     	(data);
     	
   	root.sum(function(d) { return +d.fb_count }) ;  // Compute the numeric value for each entity
-
-	console.log("sum is " + root);
-  // Then d3.treemap computes the position of each element of the hierarchy
-  // The coordinates are added to the root object above
-  	d3.treemap()
-    	.size([width, height])
-    	.padding(4)
-    	(root);
-    
-	make(root);
+  	
+  	ready(root)
 }

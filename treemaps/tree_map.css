@@ -4,7 +4,10 @@
 		font-size: 22px;
 		overflow: wrap;
 	}
-
+	h2 {
+	margin-bottom:100px;
+	padding-bottom:100px;
+	}
 	rect {
 		fill: black;
 		opacity: 1;
@@ -15,10 +18,11 @@
 	}
 	div.tooltip {   
 	  position: absolute;           
-	  text-align: left;           
+	  text-align: left;  
+	  margin: 10px;         
 	  width: 600px;                  
 	  height: 700px;                 
-	  padding: 2px;             
+	  padding: 10px;             
 	  font: 22px sans-serif;        
 	  background-color: white;   
 	  border: 1px solid gray;      
