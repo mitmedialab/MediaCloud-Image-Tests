@@ -29,6 +29,8 @@ Run the script to download and prep the images for analysis:
 2. Generate the logits: `python -m doppler.logits data/images-123-4321.json`
 3. Generate the scatterplot: `python -m doppler.mosaics data/images-123-4321.json`
 
+### 4 - Display images in HTML/D3 according to metadata
+1. If you want to pull images according to Inlink count, FB shares, media source, publish date or other metadata, please refer to the `treemaps` folder which contains html, js and css for our image treemaps.
 
 Installation Tips
 -----------------
