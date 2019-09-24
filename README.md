@@ -3,7 +3,7 @@ MediaCloud + Doppler Topic Test
 
 Install the requirements first.
 Then add a `.env` file and add a line with your api key: `MC_API_KEY=1233423532532523`
-
+Excerpted from Leon Yin's Disinfo Doppler [https://github.com/yinleon/Disinfo-Doppler]
 
 Running the Script
 ------------------
