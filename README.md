@@ -1,4 +1,4 @@
-MediaCloud + Doppler Topic Test
+MediaCloud + Doppler + Top Image Topic Test
 ===============================
 
 Install the requirements first.
