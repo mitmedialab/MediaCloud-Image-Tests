@@ -13,8 +13,8 @@ import doppler
 
 logger = logging.getLogger(__file__)
 
-TOPIC_ID = 3132  # abortion in us
-TIMESPAN_ID = 551972 #largest
+TOPIC_ID = 3730  # abortion in us
+TIMESPAN_ID = 828832 #largest
 print(len(sys.argv))
 if len(sys.argv) is not 3:
     logger.error("Defaulting to internal topic_id and timespan_id")
@@ -102,6 +102,15 @@ def top_images_in_timespan(topics_id, timespans_id):
         logger.info("    parsing out images (in parallel)...")
         try:
             timespan_top_images = pool.map(_top_image_worker, html_stories)
+            for image in timespan_top_images: #yank undesirable icon pics etc from results
+                test_url = str(image['top_image'])
+                ignore = ["logo", "Logo", "favicon"]
+                if any(x in test_url for x in ignore):
+                    timespan_top_images.remove(image)
+                media_id = image['metadata']['media_id'] if 'metadata' in image else 0
+                if media_id == 623382 or media_id == 1751:
+                    print("removing")
+                    timespan_top_images.remove(image)
             logger.info("  done with page ({} top images)".format(len(timespan_top_images)))
             top_images += timespan_top_images
         except TypeError as te:
@@ -121,6 +130,8 @@ def top_images_in_timespan(topics_id, timespans_id):
 # 1. Grab all the top image urls from stories in a timespan
 top_images = top_images_in_timespan(TOPIC_ID, TIMESPAN_ID)
 top_images = [t for t in top_images if len(t['top_image']) > 0]  # remove stories with no top image
+top_images = [t for t in top_images if 'favicon' not in t['top_image'] and 'logo' not in t['top_image'] and 'Logo' not in t['top_image'] and '623382' not in str(t['metadata']['media_id']) and '1751' not in str(t['metadata']['media_id'])]
+
 
 # 2. Write out JSON to use with doppler mosaic (hopefully)
 logger.info("Writing to json")
@@ -136,14 +147,20 @@ for info in top_images:
         'media_url': info['metadata']['media_url'],
         'publish_date': info['metadata']['publish_date'],
         'inlink_count': info['inlink_count'],
-        'fb_count': info['fb_count'],
+        'fb_count': info['fb_count'] if 'fb_count' in info else 0,
         'partisan': info['partisan']
     }
     data.append(item)
 
-#sort by fb_count
-sorted_data = sorted(data, key=lambda k: k['fb_count'])
+    fb_sort = True
+    if fb_sort:
+        sort_by = 'fb_count'
+    else:
+        sort_by = 'inlink_count'
+#sort by fb_count or inlink_count
+sorted_data = sorted(data, key=lambda k: k[sort_by])
 json_file_path = os.path.join(DATA_DIR, 'images-{}-{}.json'.format(TOPIC_ID, TIMESPAN_ID))
+print(len(sorted_data))
 with open(json_file_path, 'w') as outfile:
     json.dump(sorted_data, outfile)
 

@@ -26,6 +26,15 @@ if len(sys.argv) is not 2:
     sys.exit()
 file_name = sys.argv[1]
 
+def read_stories_from_csv(csv_file): # convenience, not currently used
+    csvfile = open(csv_file, 'r')
+    stories_list = []
+    reader = csv.DictReader(csvfile)
+    # fieldnames = reader.fieldnames
+    for row in reader:
+        stories_list.append(row)
+    return stories_list
+
 
 def _image_worker(row):
     if row['fb_count']:
@@ -60,7 +69,8 @@ def rewrite_json_from_csv(json_path): # convenience, not currently used
     # fieldnames = reader.fieldnames
     for row in reader:
         json.dump(row, jsonfile)
-        jsonfile.write('\n')
+        jsonfile.write(',\n')
+
 
 
 if __name__ == "__main__":
@@ -68,8 +78,8 @@ if __name__ == "__main__":
     json_path = file_name
     # read in the sample data
 
+    #json_path = rewrite_json_from_csv("data/images-3730-828832.json")
 
-    logger.info("Reading from {}".format(file_name))
     #data = [json.loads(line) for line in open(json_path, 'r')]
 
     with open(json_path, 'r') as f:
@@ -87,26 +97,36 @@ if __name__ == "__main__":
     # pool.terminate()
     updated_data =[]
     for d in data:
-        has_fb_count = d['fb_count'] # for my purposes, I only want pics that have fb links
-        has_inlink_count = d['inlink_count']  # for my purposes, I only want pics that have fb links
-        if int(has_inlink_count) > 60:
+        has_fb_count = d['fb_count'] if 'fb_count' in d else False # for my purposes, I only want pics that have fb links
+        has_inlink_count = d['inlink_count'] if 'inlink_count' in d else False  # for my purposes, I only want pics that have fb links
+        if int(has_inlink_count) > 0:
+            print(d['inlink_count'])
             logger.info("data...{} {}".format(len(updated_data), d))
             row = _image_worker(d)
-            updated_data.append(row)
+            if 'deleted' in row and row['deleted'] == False:
+                updated_data.append(row)
     logger.info("done")
     # update json with relevant metadata
 
-    with open(json_path, 'w') as outfile:
-        json.dump(updated_data, outfile)
-    logger.info("done w updated json file")
+    if len(updated_data) > 0:
+        with open(json_path, 'w') as outfile:
+            json.dump(updated_data, outfile)
+        logger.info("done w updated json file")
 
+    fb_sort = True
 
     image_dir_path_csv = "{}-dataset.csv".format(file_name.replace('.json', ''))
-    newlist = sorted(updated_data, key=lambda k: k['fb_count'])
+
+    if fb_sort:
+        newlist = sorted(updated_data, key=lambda k: k['fb_count'])
+    else:
+        newlist = sorted(updated_data, key=lambda k: k.get('inlink_count', 0))
+    print(newlist)
     wr = csv.writer(open(image_dir_path_csv, 'w'), quoting=csv.QUOTE_ALL)
     wr.writerow(newlist[0].keys())
+    print(newlist[0].keys())
+
     for row in newlist:
-        print(row)
         wr.writerow(row.values())
 
 

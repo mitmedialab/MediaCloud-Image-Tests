@@ -8,7 +8,6 @@ import torchvision
 from PIL import Image
 import imagehash
 import logging
-import matplotlib.pyplot as plt
 
 logger = logging.getLogger(__file__)
 
@@ -131,6 +130,7 @@ def download_media_and_return_dhash(url, fn):
     If the download fails, returns a placeholder 'NOHASH' and a filesize of 0.
     """
     dhash = NO_HASH
+    img_size = 0
     if os.path.exists(fn):
         # is th image exists, don't download it again.
         # calculate the size and hash
@@ -139,7 +139,13 @@ def download_media_and_return_dhash(url, fn):
             # read the image and calculate the hash
             img = read_image(fn)
             logger.info("path exists, hash read")
-            dhash = str(imagehash.dhash(img, hash_size=8))
+            logger.info("img size")
+            logger.info(img.size)
+            try:
+                dhash = str(imagehash.dhash(img, hash_size=8))
+                return dhash, img_size
+            except ValueError as e:
+                logger.error("failing to calc dhash".format(e))
     else:
         if download_media(url, fn):
             #calculate the hash
@@ -149,7 +155,7 @@ def download_media_and_return_dhash(url, fn):
             try:
                 dhash = str(imagehash.dhash(img, hash_size=8))
                 return dhash, img_size
-            except Error as e:
+            except ValueError as e:
                 logger.error("failing to calc dhash".format(e))
         return NO_HASH, 0
 

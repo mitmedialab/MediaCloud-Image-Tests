@@ -7,7 +7,7 @@ import logging
 from datetime import datetime
 
 from doppler import cols_conv_feats, skip_hash, filename_without_extension
-import doppler.mosaic_utils as mosaic_utils
+import doppler.mosaic_utils_stories as mosaic_utils
 
 logger = logging.getLogger(__file__)
 
@@ -105,21 +105,13 @@ def build(filename, logits_file_path, full_metadata_file_path, sample_dataset_fi
     logging.info(" shape {}".format(df_merged.shape[0]))
     logging.info(" sample size {}".format(sample_size))
     # sample the dataset
+    #df_sample = df_merged.sample(sample_size, weights='publish_date', random_state=303)
 
-
-    fb_sort = True
-    if fb_sort:
-        sort_by = 'fb_count'
-    else:
-        sort_by = 'inlink_count'
-    df_sample = df_merged.sample(sample_size, weights=sort_by, random_state=303)
-
-    sorted_sample = df_sample.sort_values(by=[sort_by]) # ascending=False)
+    sorted_sample = df_merged.sort_values(by=['inlink_count']) # ascending=False)
     # min_date = df_sample[date_col_name].min()
     # max_date = df_sample[date_col_name].max()
     images = sorted_sample[image_path_property]
-    fb_counts = sorted_sample['fb_count']
-    inlink_counts = sorted_sample['inlink_count']
+    #fb_counts = sorted_sample['fb_count']
     titles = sorted_sample['story_title']
     urls = sorted_sample['story_url']
     origins = sorted_sample['media_url']
@@ -130,35 +122,33 @@ def build(filename, logits_file_path, full_metadata_file_path, sample_dataset_fi
     embeddings = encoder.transform(sorted_sample[cols_conv_feats].values)
 
 
-    timespan_id=filename.split("-")[2]
+    story_country=filename.split("-")[1]
     # build the scatterplot
-    """scatterplot_image_path = os.path.join(DATA_DIR, 'scatterplot-{}-{}.png'.format(timespan_id, datetime.now()))
-     logging.info("  Building scatterplot image to {}...".format(scatterplot_image_path))
-     image = mosaic_utils.scatterplot_images(embeddings, images,
-                                            None,
-                                            titles,
-                                            origins,
-                                            None,
-                                            urls=urls,
-                                            save_as_file=scatterplot_image_path,
-                                            width=2400, height=1800, max_dim=100)
-    image.save(scatterplot_image_path)
-    logging.info("  done")
-    """
+    scatterplot_image_path = os.path.join(DATA_DIR, 'scatterplot-{}-{}.png'.format(story_country, datetime.now()))
+    logging.info("  Building scatterplot image to {}...".format(scatterplot_image_path))
+        #image = mosaic_utils.scatterplot_images(embeddings, images,
+        #                                    titles,
+        #                                    origins,
+        #                                    urls=urls,
+        #                                    save_as_file=scatterplot_image_path,
+        #                                   fb_counts=None,partisanship=None,
+        #                                   width=2400, height=1800, max_dim=300)
+        #image.save(scatterplot_image_path)
+        #logging.info("  done")
 
     # and now make the mosaic
     tile_width, tile_height = 125, 90
-    mosaic_file_path = os.path.join(DATA_DIR, 'mosaic-{}-{}.png'.format(timespan_id, datetime.now()))
+    mosaic_file_path = os.path.join(DATA_DIR, 'mosaic-{}-{}.png'.format(story_country, datetime.now()))
     logging.info("  Building mosaic image to {}...".format(mosaic_file_path))
     mosaic_utils.generate_mosaic(embeddings, images,
-                                 fb_counts=fb_counts,
                                  titles=titles,
                                  origins=origins,
-                                 partisanship=None,
                                  urls = urls,
                                  mosaic_width=nx, mosaic_height=ny,
                                  tile_width=tile_width, tile_height=tile_height,
-                                 save_as_file=mosaic_file_path, verbose=True, return_image=True,
+                                 save_as_file=mosaic_file_path,
+                                 fb_counts=None,partisanship=None,
+                                 verbose=True, return_image=True,
                                  title="Mosaic of {}".format(filename))
     logging.info("Done")
 

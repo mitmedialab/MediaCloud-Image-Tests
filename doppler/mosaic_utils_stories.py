@@ -64,28 +64,27 @@ javacript_load_img_section = """
 """
 
 def make_csv_and_json_with_data(data):
-    sorted_data = sorted(data, key=lambda k: k['fb_count'])
-    json_file_path = os.path.join(DATA_DIR, 'images-{}-{}.json'.format(TOPIC_ID, TIMESPAN_ID))
+    sorted_data = sorted(data, key=lambda k: k['publish_date'])
+    json_file_path = os.path.join(DATA_DIR, 'images-{}-{}.json'.format(story_country))
     with open(json_file_path, 'w') as outfile:
         json.dump(sorted_data, outfile)
 
-    csv_file_path = os.path.join(DATA_DIR, 'images-{}-{}.csv'.format(TOPIC_ID, TIMESPAN_ID))
+    csv_file_path = os.path.join(DATA_DIR, 'images-{}-{}.csv'.format(story_country))
 
     wr = csv.writer(open(csv_file_path, 'w'), quoting=csv.QUOTE_ALL)
     wr.writerow(sorted_data[0].keys())
     for row in sorted_data:
         wr.writerow(row.values())
 
-def generate_mosaic(embeddings, images, fb_counts, titles, origins, partisanship, urls, mosaic_width, mosaic_height,
-                    tile_width=150, tile_height=100, title="Doppler Mosaic",
+def generate_mosaic(embeddings, images, titles, origins, urls, mosaic_width=1000, mosaic_height=1000, tile_width=150, tile_height=100,
                     title_rbg=(255, 255, 255), save_as_file='mosaic.png',
-                    return_image=True, verbose=False):
+                    fb_counts=None,partisanship=None,verbose=True,
+                    return_image=True, title="Doppler Mosaic" ):
     """
     Transforms 2-dimensional embeddings to a grid. 
     Plots the images for each embedding in the corresponding grid (mosaic).
     Includes arguments for the dimensions of each tile and the the mosaic.
     """
-    # assign to grid
     # assign to grid
     grid_assignment = transformPointCloud2D(embeddings,
                                             target=(mosaic_width,
@@ -93,16 +92,16 @@ def generate_mosaic(embeddings, images, fb_counts, titles, origins, partisanship
     full_width = tile_width * mosaic_width
     full_height = tile_height * (mosaic_height + 2)
     aspect_ratio = float(tile_width) / tile_height
-    # print(grid_assignment)
+    #print(grid_assignment)
     # create an empty image for the mosaic
     mosaic = Image.new('RGB', (full_width, full_height))
 
     # iterate through each image and where it is possed to live.
     for f_img, (idx_x, idx_y) in tqdm(zip(images, grid_assignment[0]),
-                                      disable=False):
+                                      disable = False):
         # Find exactly where the image will be
         x, y = tile_width * idx_x, tile_height * idx_y
-
+        
         # read the image, center crop the image and add it to the mosaic
         try:
             img = Image.open(f_img).convert('RGBA')
@@ -112,9 +111,8 @@ def generate_mosaic(embeddings, images, fb_counts, titles, origins, partisanship
             print(f"Failed to add image {f_img} see error:\n{e}")
 
     draw = ImageDraw.Draw(mosaic)
-    # draw.text((4, (tile_height * (mosaic_height)) + 10),title, title_rbg, font=fnt)
-
-
+        #draw.text((4, (tile_height * (mosaic_height)) + 10),title, title_rbg, font=fnt)
+        
     if save_as_file and not os.path.exists(save_as_file):
         try:
             mosaic.save(save_as_file)
@@ -125,7 +123,8 @@ def generate_mosaic(embeddings, images, fb_counts, titles, origins, partisanship
         return mosaic
 
 
-def scatterplot_images(embeddings, images, fb_counts, titles, origins, partisanship, urls,save_as_file='scatterplot.png',
+def scatterplot_images(embeddings, images, titles, origins, urls,save_as_file='scatterplot.png',
+                fb_counts=None,partisanship=None,
                        width=2000, height=1100,
                        max_dim=40):
     """
@@ -151,7 +150,7 @@ def scatterplot_images(embeddings, images, fb_counts, titles, origins, partisans
                            size=(width, height),
                            color=(55, 61, 71))
     fnt = ImageFont.truetype('/Library/Fonts/Arial.ttf', 20)
-    for f_img, fb_count, title, origin, partisanship, url, x, y in tqdm(zip(images, fb_counts, titles, origins, partisanship, urls, tx, ty)):
+    for f_img, title, origin, url, x, y in tqdm(zip(images, titles, origins, urls, tx, ty)):
         # read and resize image
         tile = Image.open(f_img)
         #media_origin_img = "https://www.google.com/s2/favicons?domain={}".format(origin)
@@ -166,18 +165,13 @@ def scatterplot_images(embeddings, images, fb_counts, titles, origins, partisans
                             tile_height,
                             aspect_ratio)
         tileDraw = ImageDraw.Draw(tile)
-        tileDraw.text((2, 2),
-                      "{}".format(fb_count), fill=250, font=fnt)
+            #tileDraw.text((2, 2),"{}".format(fb_count), fill=250, font=fnt)
         draw = ImageDraw.Draw(scatterplot)
         draw.text((4, (tile_height * height) + 10),
                   title, fill=200, font=fnt)
         # add the image to the graph               
         x_coord = int((width - max_dim) * x)
-        partisanship = partisanship.replace("[", "").replace("]", "")
-        if partisanship not in ['', None] and int(partisanship) in [3686, 3687]:
-            x_coord = x_coord - 2000
-        elif partisanship not in ['', None] and int(partisanship) in [3689, 3690]:
-            x_coord = x_coord + 2000
+        
         y_coord = int((height - max_dim) * y)
         img_coords = (x_coord, y_coord)
         scatterplot.paste(tile,
@@ -189,12 +183,11 @@ def scatterplot_images(embeddings, images, fb_counts, titles, origins, partisans
             #    url, f_img, tile_width, tile_height, fb_count, title)
             #html_file.write(img_format)
 
-            html_file.write('<area href="{}" class="p{}" shape="rect" coords="{}, {}, {}, {}" />'.format(url, partisanship, x_coord, y_coord, x_coord + tile_width, y_coord + tile_height))
+            html_file.write('<area href="{}" shape="rect" coords="{}, {}, {}, {}" />'.format(url, x_coord, y_coord, x_coord + tile_width, y_coord + tile_height))
             img = Image.open(f_img).convert('RGBA')
             tile = resize_image(img, tile_width, tile_height, aspect_ratio)
             tileDraw = ImageDraw.Draw(tile)
-            tileDraw.text((4, 4),
-                      " {}".format(fb_count), fill=250, font=fnt)
+            #tileDraw.text((4, 4)," {}".format(fb_count), fill=250, font=fnt)
             scatterplot.paste(tile, (int(x), int(y)))
         except Exception as e:
             print(f"Failed to add image {f_img} see error:\n{e}")

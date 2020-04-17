@@ -21,9 +21,9 @@ device = torch.device('cuda:1' if torch.cuda.is_available() else 'cpu')
 
 
 def load_resnet_for_feature_extraction():
-    # Load a pre-trained model
+    # Load a pre-trained ImageNet model
     res50_model = models.resnet50(pretrained=True)
-    # Pop the last Dense layer off. This will give us convolutional features.
+    # setup Sequential container and Pop the last Dense (ReLu) layer off. This will give us convolutional features.
     res50_conv = nn.Sequential(*list(res50_model.children())[:-1])
     res50_conv.to(device)
     # Don't run backprop!
@@ -80,21 +80,24 @@ def build(json_file_path, logits_file_path, image_path_property='f_img', index_p
         logger.info("  Read existing logits file: {}".format(logits_file_path))
         abd = pd.read_csv(logits_file_path, index_col=0).index.tolist()
 
-    # now set up the dataset to run the transforms on
-    dataset = FeatureExtractionDataset(df[~df[index_property].isin(abd)],
+    # now set up the dataset by d_hash, w img files, indexes and transforms, any duplicates are removed
+    dataset = FeatureExtractionDataset(df[~df[index_property].isin(abd)], # dhash is the index key, pull in logits if already calculated
                                        img_col=image_path_property,
                                        index_col=index_property,
                                        transformations=transformations)
+
+    #samples the data and preps a tensor
     data_loader = DataLoader(dataset,
                              batch_size=batch_size,
                              shuffle=False,
                              num_workers=8)
-    res50_conv = load_resnet_for_feature_extraction()
+
+    res50_conv = load_resnet_for_feature_extraction() #Sequential container
     logger.info("  Processing data...".format(logits_file_path))
     # now go through our data
     for (X, img_file, idx) in tqdm(data_loader):
         X = X.to(device)
-        logits = res50_conv(X)
+        logits = res50_conv(X) # run tensor through sequences
         # logits.size() # [`batch_size`, 2048, 1, 1])
         logits = logits.squeeze()  # remove the extra dims
         # n_dimensions = logits.size(1)
@@ -119,6 +122,6 @@ def build(json_file_path, logits_file_path, image_path_property='f_img', index_p
 if __name__ == "__main__":
     json_path = sys.argv[1]
     logger.info("Reading from {}".format(json_path))
-    logits_file_path = './{}-logits.csv.gz'.format(json_path.replace('.json', ''))
+    logits_file_path = '{}-logits.csv.gz'.format(json_path.replace('.json', ''))
 
     build(json_path, logits_file_path, image_path_property='image_path')
